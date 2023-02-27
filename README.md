@@ -1,5 +1,15 @@
 # rpi-nixos-PoC
 PoC nixos image builder for rpi4
+### On NixOS
+If you're running NixOS and want to use this template to build the Raspberry Pi
+4 Image, you'll need to emulate an arm64 machine by adding the following to your
+NixOS configuration.
+
+```
+{
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+}
+```
 
 ###to build image on nixos run in the directory:
 ```
