@@ -1,6 +1,10 @@
 
 { pkgs, config, lib, ... }:
 {
+#  sdImage = {
+#    firmwareSize = 256;
+#    compressImage = false;    
+  };
   boot = {
     # Use mainline kernel, vendor kernel has some issues compiling due to
     # missing modules that shouldn't even be in the closure.
