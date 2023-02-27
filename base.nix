@@ -4,7 +4,7 @@
 #  sdImage = {
 #    firmwareSize = 256;
 #    compressImage = false;    
-  };
+#  };
   boot = {
     # Use mainline kernel, vendor kernel has some issues compiling due to
     # missing modules that shouldn't even be in the closure.
@@ -13,7 +13,7 @@
     kernelPackages = pkgs.linuxKernel.packages.linux_rpi4;
     # Disable ZFS by not including it in the list(s). Just adds a lot of
     # unnecessary compile time for this simple example project.
-    kernelModules = lib.mkForce [ "bridge" "macvlan" "tap" "tun" "loop" "atkbd" "ctr" "libcomposite" ];
+    kernelModules = lib.mkForce [ "bridge" "macvlan" "tap" "tun" "loop" "atkbd" "ctr" "libcomposite" "i2c-dev" ];
     supportedFilesystems = lib.mkForce [ "btrfs" "reiserfs" "vfat" "f2fs" "xfs" "ntfs" "cifs" "ext4" "vfat" ];
   };
   # "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix" usually
