@@ -22,3 +22,6 @@ unzstd -d result/sd-image/nixos-sd-image-23.05.20230222.988cc95-aarch64-linux.im
 dd if=rpi4.img of=/dev/mmcblk0 bs=4096 conv=fsync status=progress
 
 ```
+After you've booted, you will be able to rebuild the nixosConfiguration on the
+Pi. For example, by running `nixos-rebuild --flake
+github:takov751/rpi-nixos-PoC`
