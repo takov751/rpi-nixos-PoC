@@ -1,8 +1,7 @@
 { pkgs, config, lib, ... }:
 {
-  system.stateVersion = "22.11";
-#https://github.com/NixOS/nixpkgs/issues/126755 workaround missing kernel module
-#We will allow it
+  system.stateVersion = "unstable";
+#optimize nix store size on device
   nix = {
     settings.auto-optimise-store = true;
     gc = {
@@ -17,63 +16,70 @@
       experimental-features = nix-command flakes
     '';
   };
+#https://github.com/NixOS/nixpkgs/issues/126755 workaround missing kernel module
+#We will allow it
   nixpkgs.overlays = [
   (final: super: {
     makeModulesClosure = x:
       super.makeModulesClosure (x // { allowMissing = true; });
   })
 ];
+# Allow nonfree packages
   nixpkgs.config = {
   allowUnfree = true;
 };
   environment.systemPackages = with pkgs; [ 
-    raspberrypi-eeprom
     vim
-    device-tree_rpi
-    libgpiod
-    libraspberrypi
     git
     wget
     curl
     jq
     dtc
     screen
+    libraspberrypi
     bind
-    (python39.withPackages (p: with p; [
+#python3
+    (python310.withPackages (p: with p; [
     regex
     pip
     spidev
-    gpiozero
     requests
     ])) 
   ];
   services.openssh.enable = true;
   networking.hostName = "nixy";
+  # Enable hardware features
   sound.enable = true;
   hardware.pulseaudio.enable = true;
   hardware.raspberry-pi."4" = {
     apply-overlays-dtmerge.enable = true;
-    i2c0.enable = true;
+    i2c1.enable = true;
+    dwc2.enable = true;
+    fkms-3d.enable = true;
   };
   hardware.deviceTree = {
     enable = true;
-    filter = lib.mkForce "bcm2838-rpi-*.dtb";
+# Filter for specific hardware device tree
+    filter = lib.mkForce "bcm2711-rpi-*.dtb";
+# add overlay where dtsText had to be defined to workaround compatiblity issue as originally 'bcm2711' was 'bcm2833'
+# dtbo file not needed to be defined here as kernel package has the overlay directory where all the official dtbo placed
+# left the commented lines as a possible way to add dtbo file, but needs more testing 
     overlays = [
       {
-        name = "spi";
+        name = "spi0-0cs-overlay";
 #        dtsFile = ./spi0-0cs-overlay.dts;
 #         dtboFile = ./spi0-0cs.dtbo;
-         dtboFile = builtins.fetchurl {
-         name = "spi0-0cs.dtbo";
-         url = "https://github.com/raspberrypi/firmware/raw/stable/boot/overlays/spi0-0cs.dtbo";
-         sha256 = "01340ab9d04daa52c867964f50aa0632991023f40fc581ff6452764857010619";
-         };
+#         dtboFile = builtins.fetchurl {
+#         name = "spi0-0cs.dtbo";
+#         url = "https://github.com/raspberrypi/firmware/raw/stable/boot/overlays/spi0-0cs.dtbo";
+#         sha256 = "01340ab9d04daa52c867964f50aa0632991023f40fc581ff6452764857010619";
+#         };
         dtsText = ''
         /dts-v1/;
-/plugin/;
+        /plugin/;
 
-/ {
-	compatible = "brcm,bcm2838";
+        / {
+	compatible = "brcm,bcm2711";
 
 	fragment@0 {
 		target = <&spi0_cs_pins>;
@@ -113,10 +119,10 @@
       }
     ];
   };
-  # Create gpio group
+  # Create gpio and spi group to allow user to interact with those
   users.groups.gpio = {};
   users.groups.spi = {};
-  # Change permissions gpio devices
+  # Change permissions gpio,spi devices
   services.udev.extraRules = ''
     SUBSYSTEM=="bcm2711-gpiomem", KERNEL=="gpiomem", GROUP="gpio",MODE="0660"
     SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", RUN+="${pkgs.bash}/bin/bash -c 'chown root:gpio  /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport'"
@@ -128,7 +134,7 @@
     users.test = {
       password = "test";
       isNormalUser = true;
-      extraGroups = [ "wheel" "gpio" "video" "spi" ];
+      extraGroups = [ "wheel" "gpio" "video" "spi" "networkmanager" ];
     };
   };
   services.xserver = {
@@ -136,22 +142,6 @@
     displayManager.lightdm.enable = true;
     desktopManager.xfce.enable = true;
   };
-#  security.rtkit.enable = true;
-#  services.pipewire = {
-#  enable = true;
-#  alsa.enable = true;
-#  alsa.support32Bit = true;
-#  pulse.enable = true;
-  # If you want to use JACK applications, uncomment this
-#  jack.enable = true;
-#  };
-#  systemd.network.networks.usb0.matchConfig.Name = "usb0";
-#  systemd.network.networks.usb0.networkConfig = {
-#    Address = "10.42.0.2/24";
-#    DHCPServer = "no";
-#    Gateway = "10.42.0.1";
-#    DNS = "10.42.0.1";
-#  };
   networking = {
 #    interfaces."usb0".ipv4 = {
 #        addresses = [
@@ -168,14 +158,8 @@
 #    via = "10.42.0.1";
 #  }];
 #     };
-    interfaces."wlan0".useDHCP = true;
+#    interfaces."wlan0".useDHCP = true;
     interfaces."eth0".useDHCP = true;
-    wireless = {
-      interfaces = [ "wlan0" ];
-      enable = true;
-      networks = {
-        "network-ssid".psk = "password";
-      };
-    };
+    networkmanager.enable = true;
   };
 }

@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
+    nixpkgs.url = "github:takov751/nixpkgs/release-22.11";
     nixos-hardware.url = "github:nixos/nixos-hardware";
   };
   outputs = { self, nixpkgs, nixos-hardware }: {
