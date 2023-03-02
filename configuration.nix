@@ -1,6 +1,6 @@
 { pkgs, config, lib, ... }:
 {
-  system.stateVersion = "unstable";
+  system.stateVersion = "22.11";
 #optimize nix store size on device
   nix = {
     settings.auto-optimise-store = true;
@@ -23,6 +23,16 @@
     makeModulesClosure = x:
       super.makeModulesClosure (x // { allowMissing = true; });
   })
+  ## temporary workaround as uboot 2022.10 hangs when usb HDD/SSD connected
+  (final: super: {
+      ubootRaspberryPi4_64bit = super.ubootRaspberryPi4_64bit.override rec {
+        version = "2023.01";
+        src = super.fetchurl {
+          url = "ftp://ftp.denx.de/pub/u-boot/u-boot-${version}.tar.bz2"; 
+          hash = "sha256-aUI7rTgPiaCRZjbonm3L0uRRLVhDCNki0QOdHkMxlQ8=";
+        };
+      };
+   })
 ];
 # Allow nonfree packages
   nixpkgs.config = {

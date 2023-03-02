@@ -6,7 +6,16 @@
   outputs = { self, nixpkgs, nixos-hardware }: {
     images = {
       pi = (self.nixosConfigurations.pi.extendModules {
-        modules = [ "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix" ];
+        modules = [ "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+## Defining sdImage parameters for builder
+          ( { config, lib, pkgs, resources, ... }: {
+              sdImage = {
+                compressImage = false;
+# /boot vfat partition by default 30M which is a bit small for live updating.
+                firmwareSize = 512;
+              };
+         })
+         ];
       }).config.system.build.sdImage;
     };
     nixosConfigurations = {
