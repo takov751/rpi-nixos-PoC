@@ -5,7 +5,7 @@
   };
   outputs = { self, nixpkgs, nixos-hardware }: {
     images = {
-      pi = (self.nixosConfigurations.pi.extendModules {
+      nixy = (self.nixosConfigurations.pi.extendModules {
         modules = [ "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
           ( { config, lib, pkgs, resources, ... }: {
               sdImage = lib.mkForce {
@@ -79,7 +79,7 @@
       }).config.system.build.sdImage;
     };
     nixosConfigurations = {
-      pi = nixpkgs.lib.nixosSystem {
+      nixy = nixpkgs.lib.nixosSystem {
         system = "aarch64-linux";
         modules = [
           nixos-hardware.nixosModules.raspberry-pi-4
