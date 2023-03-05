@@ -1,6 +1,6 @@
 { pkgs, config, lib, ... }:
 {
-  system.stateVersion = "22.11";
+  system.stateVersion = "unstable";
 #optimize nix store size on device
   nix = {
     settings.auto-optimise-store = true;
@@ -23,7 +23,6 @@
     makeModulesClosure = x:
       super.makeModulesClosure (x // { allowMissing = true; });
   })
-  ## temporary workaround as uboot 2022.10 hangs when usb HDD/SSD connected
   (final: super: {
       ubootRaspberryPi4_64bit = super.ubootRaspberryPi4_64bit.override rec {
         version = "2023.01";
@@ -41,6 +40,7 @@
   environment.systemPackages = with pkgs; [ 
     vim
     git
+    pulseaudio
     wget
     curl
     jq
@@ -60,11 +60,24 @@
   networking.hostName = "nixy";
   # Enable hardware features
   sound.enable = true;
-  hardware.pulseaudio.enable = true;
+ # hardware.pulseaudio.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    # If you want to use JACK applications, uncomment this
+    jack.enable = true;
+
+    # use the example session manager (no others are packaged yet so this is enabled by default,
+    # no need to redefine it in your config for now)
+    #media-session.enable = true;
+  };
   hardware.raspberry-pi."4" = {
     apply-overlays-dtmerge.enable = true;
     i2c1.enable = true;
     dwc2.enable = true;
+    audio.enable = true;
     fkms-3d.enable = true;
   };
   hardware.deviceTree = {
@@ -146,7 +159,7 @@
     users.test = {
       password = "test";
       isNormalUser = true;
-      extraGroups = [ "wheel" "gpio" "i2c" "video" "spi" "networkmanager"  ];
+      extraGroups = [ "audio" "wheel" "gpio" "i2c" "video" "spi" "networkmanager" ];
     };
   };
   services.xserver = {
